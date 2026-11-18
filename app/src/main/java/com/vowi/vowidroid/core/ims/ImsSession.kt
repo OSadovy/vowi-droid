@@ -574,6 +574,7 @@ class ImsSession(
         if (transactions.putIfAbsent(key, queue) != null) throw ImsException("duplicate SIP transaction")
         try {
             CoreLog.d(TAG, "sending ${key.substringAfterLast(':')} (${request.size} bytes) over $transport to ${current.remoteHostPort}")
+            if (key.endsWith(":REGISTER")) CoreLog.d(TAG, "REGISTER headers: ${com.vowi.vowidroid.core.sip.SipTrace.headerLine(request)}")
             current.send(request)
             CoreLog.d(TAG, "sent ${key.substringAfterLast(':')}")
             val deadline = System.currentTimeMillis() + timeoutMs
@@ -605,6 +606,7 @@ class ImsSession(
 
     private fun dispatch(message: SipMessage, respond: (ByteArray) -> Unit) {
         CoreLog.d(TAG, "received $message")
+        if (message.isResponse && message.statusCode >= 300) CoreLog.d(TAG, "${message.statusCode} headers: ${com.vowi.vowidroid.core.sip.SipTrace.headerLine(message)}")
         if (message.isResponse) {
             val (sequence, method) = message.cseq() ?: return
             transactions["${message.callId}:$sequence:$method"]?.offer(message)
