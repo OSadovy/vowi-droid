@@ -14476,7 +14476,10 @@
         }
       },
       "ims": {
-        "ipsec_encryption": "aes-cbc"
+        "ipsec_encryption": "aes-cbc",
+        "register_options": {
+          "contact_format": "gsma"
+        }
       }
     },
     {
