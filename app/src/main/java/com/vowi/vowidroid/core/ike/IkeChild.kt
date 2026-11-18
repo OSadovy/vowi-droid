@@ -229,7 +229,8 @@ object IkeChild {
                 CONFIG_INTERNAL_IP4_DNS -> if (length == 4) dns.add(value)
                 CONFIG_INTERNAL_IP6_DNS -> if (length == 16) dns.add(value)
                 in PCSCF_IP4_ATTRIBUTES -> if (length == 4) pcscf.add(value)
-                in PCSCF_IP6_ATTRIBUTES -> if (length == 16) pcscf.add(value)
+                // Orange PL sends these with a trailing prefix-length byte, as in INTERNAL_IP6_ADDRESS.
+                in PCSCF_IP6_ATTRIBUTES -> if (length == 16 || length == 17) pcscf.add(value.copyOf(16))
             }
             offset += length
         }
