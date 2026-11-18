@@ -74,7 +74,8 @@ object ImsSupport {
     /** The GSMA IMEI instance URI when the modem identity is known, else the UUID. */
     fun sipInstanceId(identity: SimIdentity, fallbackUuid: String): String {
         val imei = identity.imei.trim()
-        return if (SimIdentity.isDigits(imei, 15, 15)) "urn:gsma:imei:$imei-0" else "urn:uuid:${fallbackUuid.trim()}"
+        // RFC 7254: TAC-SNR-spare, the check digit replaced by the spare "0".
+        return if (SimIdentity.isDigits(imei, 15, 15)) "urn:gsma:imei:${imei.substring(0, 8)}-${imei.substring(8, 14)}-0" else "urn:uuid:${fallbackUuid.trim()}"
     }
 
     /** P-Access-Network-Info for a Wi-Fi UE; it never claims to be network-provided. */
