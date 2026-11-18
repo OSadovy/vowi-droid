@@ -209,12 +209,12 @@ object IkeHandshake {
                 val payloads = mutableListOf(Payload(Ike.PAYLOAD_EAP, response))
                 if (IkeOffers.deviceIdentityRequested(current)) deviceIdentityPending = true
                 if (deviceIdentityPending) {
-                    // TS 24.302: the IMEI goes out only once the ePDG has proven itself, so a stranger never learns it.
-                    val notify = if (responderAuth == ResponderAuthStatus.VERIFIED && params.imei.isNotBlank()) runCatching { IkeOffers.deviceIdentityNotify(params.imei) }.getOrNull() else null
+                    // Sent before the ePDG has proven itself: an ePDG that proves itself only after EAP asks before then.
+                    val notify = if (params.imei.isNotBlank()) runCatching { IkeOffers.deviceIdentityNotify(params.imei) }.getOrNull() else null
                     CoreLog.i(TAG, "the ePDG asked for the device identity: " + when {
                         notify != null -> "sending ${params.imei.trim().length} digits"
                         params.imei.isBlank() -> "none is set for this line"
-                        else -> "not sent, the ePDG's certificate is ${responderAuth.wire}"
+                        else -> "not sent, the IMEI is not valid"
                     })
                     notify?.let(payloads::add)
                     deviceIdentityPending = false
