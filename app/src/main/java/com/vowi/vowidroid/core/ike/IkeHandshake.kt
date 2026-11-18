@@ -246,7 +246,9 @@ object IkeHandshake {
             val childOutboundSpi = childProposals[0].spi.u32(0)
             val initiatorSelectors = IkeChild.parseTrafficSelectors(IkeWire.onePayload(finalPayloads, Ike.PAYLOAD_TSI))
             val responderSelectors = IkeChild.parseTrafficSelectors(IkeWire.onePayload(finalPayloads, Ike.PAYLOAD_TSR))
-            val network = IkeChild.parseConfiguration(IkeWire.onePayload(finalPayloads, Ike.PAYLOAD_CP))
+            val configurationReply = IkeWire.onePayload(finalPayloads, Ike.PAYLOAD_CP)
+            CoreLog.i(TAG, "configuration reply: " + describeConfiguration(configurationReply.body))
+            val network = IkeChild.parseConfiguration(configurationReply)
             if (network.localIpv4 == null && network.localIpv6 == null) throw IkeException("ike: the ePDG did not assign an inner IP address")
             val pcscf = IkeChild.pcscfForAssignedFamilies(network.pcscf, network.localIpv4 != null, network.localIpv6 != null)
             if (pcscf.isEmpty()) throw IkeException("ike: the ePDG did not provide a P-CSCF matching an assigned address family")
@@ -386,5 +388,19 @@ object IkeHandshake {
         val expectedSource = IkeCrypto.natDetectionHash(initiatorSpi, responderSpi, remote.address, remote.port)
         val expectedDestination = IkeCrypto.natDetectionHash(initiatorSpi, responderSpi, local.address, local.port)
         return !constantTimeEquals(source, expectedSource) || !constantTimeEquals(destination, expectedDestination)
+    }
+
+    /** Every attribute of a configuration payload as type/length=hex, unparsed. */
+    private fun describeConfiguration(body: ByteArray): String {
+        val parts = ArrayList<String>()
+        var offset = 4
+        while (offset + 4 <= body.size) {
+            val kind = body.u16(offset) and 0x7fff
+            val length = body.u16(offset + 2)
+            val end = minOf(offset + 4 + length, body.size)
+            parts.add("$kind/$length=" + body.copyOfRange(offset + 4, end).joinToString("") { "%02x".format(it) })
+            offset = end
+        }
+        return "cfg type ${if (body.isEmpty()) "?" else body[0].toInt() and 0xff}: " + parts.joinToString(" ")
     }
 }
